@@ -21,6 +21,8 @@ admin.initializeApp({
 
 import { getAuth } from "firebase-admin/auth";
 import { ServerResponse } from 'http';
+import e from 'express';
+import { log } from 'console';
 
 const server = express();
 
@@ -213,11 +215,32 @@ server.post("/google-auth", async (req, res) => {
       return res.status(500).json({ "error": "Failed to authenticate you with Google. Try with some other Google account" });
     });
 });
+
+server.post("/all-latest-blogs-count",(req,res)=>{
+  Blog.countDocuments({draft :false})
+  .then((count)=>{
+    return res.status(200).json({totalDocs:count})
+  })
+  .catch(err=>{
+    return res.status(500).json({error:err.message})
+  })
+
+
+})
+
+
+
+
 server.get('/latest-blogs',(req,res)=>{
+
+    let {page} =5;
+    let maxLimit =5;
+
   Blog.find({draft :false}).
   populate("author","personal_info.username personal_info.fullname -_id")
   .sort({"publishedAt":-1})
   .select("blog_id title des banner activity tags publishedAt -_id")
+  .skip((page -1) * maxLimit)
   .limit(maxLimit)
   .then(blogs=>{
     return res.status(200).json(blogs)
@@ -240,6 +263,89 @@ server.get('/trending-blogs',(req,res)=>{
     return res.status(500).json({error:err.message})
   })
 })
+
+
+
+server.post("/search-blogs",(req,res)=>{
+  let {tag ,page,query,author}= req.body;
+ let findQuery = {tag:tag, draft :false}
+  if(tag){
+    findQuery= {tags:tag,draft:false};
+  }else if(query){
+      findQuery = {draft :false ,title: new RegExp(query,'i')}
+  } else if(author) {
+    findQuery = {author,draft :false}
+  }
+
+
+  let maxLimit =2 ;
+
+  Blog.find(findQuery)
+  .populate("author" ,"personal_info.profile_img personal_info.username personal_info.fullname -_id")
+  .sort({"publishedAt":-1})
+  .select("blog_id title des banner activity tags publishedAt -_id")
+  .skip((page-1) *maxLimit)
+  .limit(maxLimit)
+  .then(blogs=>{
+    return res.status(200).json(blogs)
+  })
+  .catch(err=>{
+    return res.status(500).json({error:err.message})
+  })
+
+})
+server.post("/search-blogs-count",(req,res)=>{
+  let {tag ,author,query} = req.body;
+ let findQuery = {tag:tag, draft :false}
+  if(tag){
+    findQuery= {tags:tag,draft:false};
+  }else if(query){
+      findQuery = {draft :false ,title: new RegExp(query,'i')}
+  }else if(author) {
+    findQuery = {author,draft :false}
+  }
+
+  Blog.countDocuments(findQuery)
+  .then(count =>{
+    return res.status(200).json({totalDocs:count})
+
+  }).catch(err =>{
+    return res.status(500).json({error :err.message})
+  })
+})
+
+server.post("/search-users",(req,res)=>{
+  let {query} = req.body;
+
+  User.find({"personal_info.username" : new RegExp(query,'i')})
+  .limit(50)
+  .select("personal_info.fullname personal_info.username personal_info.profile_img -_id")
+  .then(users =>{
+    return res.status(200).json({users})
+  })
+  .catch(err =>{
+    return res.json(500).json({err :err.message})
+  })
+})
+
+
+
+server.post("/get-profile",(req,res)=>{
+  let {username} = req.body;
+
+  User.findOne({"personal_info.username":username})
+  .select("-personal_info.password -google_auth -updatedAt -blogs")
+  .then(user=>{
+    return res.status(200).json(user)
+  })
+  .catch(err=>{
+    return res.status(500).json({errpr :err.message})
+  })
+
+})
+
+
+
 server.post('/create-blog',verifyJWT,(req,res)=>{
 let authorId = req.user;
 let {title,des,banner,tags,content,draft}= req.body;

@@ -1,0 +1,106 @@
+import { useParams } from "react-router-dom";
+import InpageNavigation from "../components/inpage-navigation.component";
+import Loader from "../components/loader.component";
+import AnimationWrapper from "../components/animation-wrapper.component";
+import BLogPostCard from "../components/blog-post-card.component";
+import NoDataMessage from "../components/no-data-message.component";
+import LoadMoreButton from "../components/load-more-button.component";
+import { useEffect, useState } from "react";
+import { fetchLatestBlogs, fetchBlogsByCategory } from "../api/blogs";
+import axios from "axios";
+import filterPaginationData from "../common/filter-pagination-data"
+import UserCard from "../components/usercard.component";
+const Searchpage = () => {
+    let { query } = useParams();
+    const [blogs, setBlogs] = useState(null);
+    let [users,setUsers]= useState(null);
+
+    const searchBlogs = ({page = 1,create_new_arr= false}) => {
+    axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/search-blogs",{query,page}
+        .then( async({data})=>{
+            let formatedData = await filterPaginationData({
+                state:blogs,
+                data:data.blogs,
+                page,
+                countRoute:"/search-blogs-count",
+                data_to_send :{query},
+                create_new_arr
+            })
+            setBlogs(formatedData)
+        })
+        .catch((err)=>{
+            console.log(err);
+        })
+    )        
+
+        const fetchUsers = () => {
+                axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/search-blogs" ,{query} )
+                .then(({data : {users}})=>{
+                    setUsers(data.users);
+                }
+        )}
+
+
+    useEffect(()=>{
+            resetState();
+            searchBlogs({page:1,create_new_arr :true});
+            fetchUsers();
+    },[query])
+
+    const resetState = () => {
+        setBlogs(null);
+        setUsers(null);
+    }
+    const UserCardWrapper = () => {
+        return (
+            <>
+                {
+                    users == null ? <Loader/> :
+                    users.length ? 
+                    users.map((user,i)=>{
+                        return <AnimationWrapper key= {i} transition={{duration:1,delay:i*0.08}}>
+                            <UserCard user={user}></UserCard>
+                            </AnimationWrapper>
+                    }) :
+                     <NoDataMessage message = "No user found "/>
+                } 
+            </>
+        )
+    }
+
+    }
+    return (
+        <section className="h-cover flex justify-center gap-8">
+            <div className="w-full">
+                <InpageNavigation route={[`Search Results from "${query}"`, "Accounts Matched"]}>
+
+                    <>
+                        {blogs === null ? (
+                            <Loader />
+                        ) : blogs.results && blogs.results.length ? (
+                            blogs.results.map((blog, i) => (
+                                <AnimationWrapper transition={{ duration: 1, delay: i * 0.1 }} key={i}>
+                                    <BLogPostCard content={blog} author={blog.author.personal_info} />
+                                </AnimationWrapper>
+                            ))
+                        ) : (
+                            <NoDataMessage message="No blogs found" />
+                        )}
+                        <LoadMoreButton state={blogs} fetchData={searchBlogs} />
+                    </>
+
+                    <UserCardWrapper/>
+                </InpageNavigation>
+            </div>
+
+            <div className="min-w-[40%] lg:min-w-[350px] max-w-min border-1 border-grey pl-8 pt-3 max-md:hidden">
+                <h1 className="font-medium text-xl mb-8 ">User related to search <i className="fi fi-rr-user mt-1"></i></h1>
+                        
+                    <UserCardWrapper/>
+            </div>
+
+        </section>
+    );
+};
+
+export default Searchpage;
