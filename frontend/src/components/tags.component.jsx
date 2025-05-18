@@ -27,7 +27,7 @@ const Tag = ({tag, tagIndex}) => {
     }
 
     return (
-        <div className="relative py-1 px-3 mt-2 mr-2 flex-row bg-white rounded-full inline-block hover:bg-opacity-50 pr-6 flex items-center w-fit">
+        <div className="relative py-1 px-3 mt-2 mr-2 bg-white rounded-full inline-block hover:bg-opacity-50 pr-6 flex items-center w-fit">
             <p className="outline-none text-center whitespace-nowrap" onKeyDown={handleTagEdit} onClick={addEditable}>{tag}</p>
             <button
                 className="absolute right-1 top-1/2 -translate-y-1/2 w-4 h-4 flex items-center justify-center"
