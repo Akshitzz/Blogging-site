@@ -10,7 +10,6 @@ import admin from "firebase-admin";
 import { createRequire } from 'module';
 import aws from "aws-sdk"
 // schema below 
-import User from './Schema/User.js';
 import Blog from './Schema/Blog.js';
 const require = createRequire(import.meta.url);
 const serviceAccount = require("./safevoice2-firebase-adminsdk-8id5v-ddce5f5da9.json");
@@ -20,9 +19,7 @@ admin.initializeApp({
 });
 
 import { getAuth } from "firebase-admin/auth";
-import { ServerResponse } from 'http';
-import e from 'express';
-import { log } from 'console';
+
 
 const server = express();
 
@@ -38,23 +35,33 @@ mongoose.connect(process.env.CONNECTION_STRING, {
 });
 // setting up the s3 bucket
 const s3 = new aws.S3({
-  region:'ap-southeast-2',
-  accesssKeyID: process.env.AWS_ACCESS_KEY ,
-  secretAccessKey:process.env.AWS_SECRET_KEY
-})
+  region: 'ap-southeast-2',
+  accessKeyId: process.env.AWS_ACCESS_KEY,
+  secretAccessKey: process.env.AWS_SECRET_KEY,
+  signatureVersion: 'v4'
+});
 
 
-const generateUploadURL=async()=>{
-  const date = new Date();
-  const imageName=`${nanoid()}-${date.getTime()}.jpeg`;
-  return await s3.getSignedUrlPromise('putObject',{
-    Bucket:'blogging-website-2',
-    Key: imageName,
-    Expires:1000,
-    ContentType:"image/jpeg"
-  })
+const generateUploadURL = async () => {
+  try {
+    const date = new Date();
+    const imageName = `${nanoid()}-${date.getTime()}.jpeg`;
+    
+    const params = {
+      Bucket: 'blogging-website-2',
+      Key: imageName,
+      Expires: 1000,
+      ContentType: "image/jpeg"
+    };
 
+    const signedUrl = await s3.getSignedUrlPromise('putObject', params);
+    return signedUrl;
+  } catch (error) {
+    console.error('Error generating upload URL:', error);
+    throw new Error('Failed to generate upload URL: ' + error.message);
+  }
 }
+
 const verifyJWT =(req,res,next)=>{
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(" ")[1];
@@ -92,15 +99,15 @@ const generateUsername = async (email) => {
 
 
 // upload image url root
-server.get('/get-upload-url',(req,res)=>{
-  generateUploadURL().then(url=>res.status(200).json({uploadURL:url}))
-  .catch(
-    err=>{
-      console.log(err.message);
-      return res.status(500).json({"error":err.message})
-    }
-  )
-})
+server.get('/get-upload-url', async (req, res) => {
+  try {
+    const url = await generateUploadURL();
+    res.status(200).json({ uploadURL: url });
+  } catch (err) {
+    console.error('Error in get-upload-url:', err);
+    res.status(500).json({ "error": err.message });
+  }
+});
 
 server.post("/signup", (req, res) => {
   let { fullname, email, password } = req.body;

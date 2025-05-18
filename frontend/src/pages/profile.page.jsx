@@ -10,7 +10,8 @@ import BLogPostCard from "../components/blog-post.component";
 import NoDataMessage from "../components/nodata.component";
 import LoadMoreButton from "../components/load-more.component";
 import PageNotFound from "./404.page";
- export const profileDataStructure = {
+
+export const profileDataStructure = {
     personal_info :{
         fullname: "",
         username : "",
@@ -23,66 +24,59 @@ import PageNotFound from "./404.page";
     },
     social_links : { },
     joinedAt: " "
- }
+}
 
- 
- 
- 
- let { personal_info:{ fullname,username:profile_username,profile_img,bio},account_info:{total_posts,total_reads}, social_links,joinedat} =profile;
- 
- let { userAuth :{username} } = useContext(UserContext) 
- 
- const ProfilePage = () => {
-     let {id:profileId} = useParams();
-     let [profile,setProfile] = useState(profileDataStructure);
-     let [loading,setloading] =useState(true);
-     let [blogs,setBlogs] = useState(null);
-     let [profileLoaded,setProfileLoaded] = useState();
-     
-     const getBlogs = ({page=1,user_id}) =>{
+const ProfilePage = () => {
+    let {id:profileId} = useParams();
+    let [profile,setProfile] = useState(profileDataStructure);
+    let [loading,setloading] =useState(true);
+    let [blogs,setBlogs] = useState(null);
+    let [profileLoaded,setProfileLoaded] = useState();
     
-            user_id = user_id == undefined ? blogs.users._id : user_id;
+    let { personal_info:{ fullname,username:profile_username,profile_img,bio},account_info:{total_posts,total_reads}, social_links,joinedat} = profile;
+    let { userAuth :{username} } = useContext(UserContext);
     
+    const getBlogs = ({page=1,user_id}) =>{
+        user_id = user_id == undefined ? blogs.users._id : user_id;
     
-            axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/search-blogs",{
-                author:user_id,
-                page
-            })
-            .then(async({data})=>{
-                    let formatedData = await filterPaginationData({
-                        state :blogs,
-                        data :data.blogs,
-                        page,
-                        countRoute : "/search-blogs-count",
-                        data_to_send:{author :user_id}
-                    })
-    
-                    formatedData.user_id = user_id;
-    
-                    setBlogs(formatedData);
-            })
-     }
- const fetchUserProfile = ()=>{
-     axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/get-profile",{
-            username:profileId
+        axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/search-blogs",{
+            author:user_id,
+            page
         })
-        .then(({data:user})=>{
-            if(user !==null){
+        .then(async({data})=>{
+                let formatedData = await filterPaginationData({
+                    state :blogs,
+                    data :data.blogs,
+                    page,
+                    countRoute : "/search-blogs-count",
+                    data_to_send:{author :user_id}
+                })
+    
+                formatedData.user_id = user_id;
+    
+                setBlogs(formatedData);
+        })
+    }
+    const fetchUserProfile = ()=>{
+        axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/get-profile",{
+                username:profileId
+            })
+            .then(({data:user})=>{
+                if(user !==null){
+                    setProfile(user);
+                }
+
+                getBlogs({user_id:user._id})
                 setProfile(user);
-            }
-
-            getBlogs({user_id:user._id})
-            setProfile(user);
-            setProfileLoaded(profileId)
-            setloading(false);
-        })
-        .catch(err =>{
-            console.log(err``)
-        })
+                setProfileLoaded(profileId)
+                setloading(false);
+            })
+            .catch(err =>{
+                console.log(err``)
+            })
     }
 
     useEffect(()=>{
-
         if(profileId !== profileLoaded){
             setBlogs(null);
         }
@@ -98,12 +92,9 @@ import PageNotFound from "./404.page";
 
     },[profileId,blogs])
 
-
     return (
-
         <AnimationWrapper>
         {
-
             loading ? <Loader/>:
             profile_username.length ?
             <section className="h-cover md:flex flex-row-reverse items-start gap-5 min-[1100px]:gap-12">

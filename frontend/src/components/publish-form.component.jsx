@@ -32,19 +32,24 @@ let navigate = useNavigate();
         }
     }
     const handleKeyDown=(e)=>{
-            if(e.keyCode == 13 || e.keyCode == 188){
-                e.preventDefault();
+        if(e.keyCode == 13 || e.keyCode == 188){
+            e.preventDefault();
 
-                let tag= e.target.value;
-                if(tags.length < tag.limit){
-                    if(!tags.includes(tag) && tag.length){
-                        setBlog({ ...blog ,tags:[ ...tags,tag] })
-                    }else{
-                        toast.error(`You can add max${taglimit} Tags`)
+            let tag = e.target.value.trim();
+            if(tag.length){
+                if(tags.length < taglimit){
+                    if(!tags.includes(tag)){
+                        setBlog({ ...blog, tags: [...tags, tag] });
+                        console.log("Tag added:", tag);
+                    } else {
+                        toast.error("Tag already exists");
                     }
+                } else {
+                    toast.error(`You can add max ${taglimit} Tags`);
                 }
-            e.target.value = ""
             }
+            e.target.value = "";
+        }
     }
     const publishBlog = (e)=>{
  if(e.target.className.includes("disable")){
@@ -86,6 +91,44 @@ let navigate = useNavigate();
                 return toast.error(response.data.error)
             })
     }
+
+    const saveDraft = (e) => {
+        if(e.target.className.includes("disable")){
+            return;
+        }
+
+        let loadingToast = toast.loading("Saving draft...");
+        e.target.classList.add('disable');
+
+        let blogObj = {
+            title: title || "Untitled",
+            banner,
+            des: des || "",
+            content,
+            tags,
+            draft: true
+        }
+
+        axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/create-blog", blogObj, {
+            headers: {
+                'Authorization': `Bearer ${access_token}`
+            }
+        })
+        .then(() => {
+            e.target.classList.remove('disable');
+            toast.dismiss(loadingToast);
+            toast.success("Draft saved");
+            setTimeout(() => {
+                navigate("/");
+            }, 500);
+        })
+        .catch(({ response }) => {
+            e.target.classList.remove('disable');
+            toast.dismiss(loadingToast);
+            return toast.error(response.data.error);
+        });
+    }
+
     return (
        <AnimationWrapper>
         <section className="w-screen min-h-screen grid items-center lg:grid-cols-2 py-16  lg:gap-4">
@@ -121,19 +164,20 @@ let navigate = useNavigate();
                <p className="mt-1 text-dark-grey text-sm text-right">{characterLimit -  des.length } characters left</p>
 
             <p className="mt-1 text-dark-grey text-sm text-right">Topics - (Help is searching and ranking your blog post ) </p>
-                <div className="relative input-box pl-2 py-2 pb-4 ">
+                <div className="relative input-box pl-2 py-2 pb-4">
                     <input type="text" placeholder="Topic" className="sticky input-box bg-white top-0 left-0 pl-4 mb-3 focus:bg-white"
                     onKeyDown={handleKeyDown}
                     />
-                  { 
-                  tags.map((tag,i)=>{
-                  return <Tag tag={tag} tagIndex={i} key={i}/>
-                  })
-                  }
-
-                <p className="mt-1 mb-4 text-dark-grey text-right">{taglimit-tags.length}Tags left</p>
-                <button className="btn-dark px-8" onClick={publishBlog }>Publish</button>
-
+                    <div className="flex flex-wrap gap-2">
+                        {tags.map((tag, i) => (
+                            <Tag tag={tag} tagIndex={i} key={i}/>
+                        ))}
+                    </div>
+                    <p className="mt-1 mb-4 text-dark-grey text-right">{taglimit-tags.length} Tags left</p>
+                    <div className="flex gap-4">
+                        <button className="btn-dark px-8" onClick={publishBlog}>Publish</button>
+                        <button className="btn-light px-8" onClick={saveDraft}>Save Draft</button>
+                    </div>
                 </div>
            
             </div>

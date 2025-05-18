@@ -16,26 +16,31 @@ let { userAuth: {access_token},setUserAuth} =useContext(UserContext)
 
 
   const userAuthThroughServer=(serverRoute,formData)=>{
-      axios.post(import.meta.env.VITE_SERVER_DOMAIN + serverRoute,formData)
+      console.log("Server URL:", import.meta.env.VITE_SERVER_DOMAIN + serverRoute);
+      console.log("Form Data:", formData);
+      
+      axios.post(import.meta.env.VITE_SERVER_DOMAIN + serverRoute, formData)
       .then(({data})=>{
         storeInSession("user",JSON.stringify(data))
         setUserAuth(data)
-
       })
       .catch(({response})=>{
+        console.log("Error response:", response);
         toast.error(response.data.error)
       })
   }
 const handleSubmit =(e)=>{
    e.preventDefault();
-   let serverRoute= type =="/sign-in" ?"/signin" : "/signup";
+   let serverRoute = type === "sign-up" ? "/signup" : "/signin";
+   console.log("Type:", type);
+   console.log("Server Route:", serverRoute);
+   
    let emailRegex = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
    let passwordRegex = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{6,20}$/;
 
   // formData
   let form = new FormData(formElement);
   let formData = {};
-
 
   for(let[key,value] of form.entries()){
     formData[key]= value;
@@ -51,10 +56,10 @@ const handleSubmit =(e)=>{
     return toast.error("Enter Email")
 }
 
-if(emailRegex.test(email)){
-    return toast.error("Emaiil is invalid")
+if(!emailRegex.test(email)){
+    return toast.error("Email is invalid")
 }
-if(passwordRegex.test(password))
+if(!passwordRegex.test(password))
 return toast.error("Password should be 9 to 20 characters long with a numeric ,1 lowercase , and 1 uppercase letters")
   
 userAuthThroughServer(serverRoute,formData)

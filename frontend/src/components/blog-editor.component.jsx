@@ -10,7 +10,7 @@ import  EditorJS from "@editorjs/editorjs"
 import { tools } from "./tools.component";
 import axios from "axios";
 import { UserContext } from "../App";
-import { useNavigate } from "react-router-dom";
+
 const BlogEditor = ()=>{
 
 let navigate = useNavigate()
@@ -22,35 +22,32 @@ let {userAuth :{access_token}} = useContext(UserContext)
 useEffect(()=>{
     if(!textEditor.isReady){
         setTextEditor(new EditorJS({
-            holderId : "textEditor",
-            data:content,
+            holder: "textEditor",
+            data: content,
             tools: tools,
-            placeholder:" Let's write an awesome story"
+            placeholder: "Let's write an awesome story"
         }))
     }
-
 },[])
-    const handleBannerUpload =(e)=>{
+    const handleBannerUpload = async (e) => {
         let img = e.target.files[0];
         if(img){
             let loadingToast = toast.loading("Uploading..")
 
-
-            uploadImage(img).then((url)=>{
-                if(url){
-                    toast.dismiss(loadingToast)
-                    toast.success("Uploaded 👍")
-                    blogBannerRef.current.src = url
-
-
-                    setBlog({...blog,banner:url})
-
-                }
-            })
-            .catch(err=>{
+            try {
+                const url = await uploadImage(img);
                 toast.dismiss(loadingToast);
-                return toast.error(err);
-            })
+                toast.success("Uploaded 👍");
+                
+                if(blogBannerRef.current) {
+                    blogBannerRef.current.src = url;
+                }
+                
+                setBlog({...blog, banner: url});
+            } catch (err) {
+                toast.dismiss(loadingToast);
+                toast.error(err.message);
+            }
         }
     }
     
@@ -66,6 +63,11 @@ useEffect(()=>{
         input.style.height = 'auto';
         input.style.height = input.scrollHeight + "px";
         setBlog({ ...blog, title:input.value})
+    }
+
+    const handleDesChange=(e)=>{
+        let input = e.target;
+        setBlog({ ...blog, des:input.value})
     }
 
     const handleError = (e)=>{
@@ -171,27 +173,37 @@ useEffect(()=>{
                 <section>
                     <div className="mx-auto max-w-[900px] w-full">
 
-                        <div className="relative aspect-video bg-white border-grey hover:opacity-80 ">
+                        <div className="relative aspect-video bg-white border-grey hover:opacity-80">
                             <label htmlFor="uploadBanner">
                                 <img
-                                // ref={blogBannerRef}
-                                src={banner}
-                                className="z-20 "
-                                onError={handleError}
-
+                                    ref={blogBannerRef}
+                                    src={banner}
+                                    className="z-20 w-full h-full object-cover"
+                                    onError={handleError}
+                                    alt="Blog banner"
                                 />
-                                <input id="uploadBanner" type="file" accept=".png .jpg .jpeg"  hidden onChange={handleBannerUpload}
+                                <input 
+                                    id="uploadBanner" 
+                                    type="file" 
+                                    accept=".png,.jpg,.jpeg" 
+                                    hidden 
+                                    onChange={handleBannerUpload}
                                 />
                             </label>
-
                         </div>
                     <textarea 
-                    defaultvalue={title}
+                    value={title}
                     placeholder="Blog Title"
-                    className="text-4xl font-medium w-full h-20 outline-none  resize-none mt-10 leading-tight placeholder:opacity-40 "
+                    className="text-4xl font-medium w-full h-20 outline-none resize-none mt-10 leading-tight placeholder:opacity-40"
                     onKeyDown={handleTitleKeyDown}
                     onChange={handleTitleChange}
-                    > </textarea>
+                    />
+                    <textarea
+                        value={des}
+                        placeholder="Short description about your blog"
+                        className="text-lg w-full h-20 outline-none resize-none mt-5 leading-tight placeholder:opacity-40"
+                        onChange={handleDesChange}
+                    />
                     <hr  className="w-full opacity-10 my-5"/>
                     <div  id="textEditor" className="font-gelasio">
 

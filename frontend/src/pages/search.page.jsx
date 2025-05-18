@@ -1,15 +1,16 @@
 import { useParams } from "react-router-dom";
 import InpageNavigation from "../components/inpage-navigation.component";
 import Loader from "../components/loader.component";
-import AnimationWrapper from "../components/animation-wrapper.component";
-import BLogPostCard from "../components/blog-post-card.component";
-import NoDataMessage from "../components/no-data-message.component";
-import LoadMoreButton from "../components/load-more-button.component";
+import AnimationWrapper from "../common/page-animation";
+import BLogPostCard from "../components/blog-post.component";
+import NoDataMessage from "../components/nodata.component";
+import LoadMoreButton from "../components/load-more.component";
 import { useEffect, useState } from "react";
-import { fetchLatestBlogs, fetchBlogsByCategory } from "../api/blogs";
+
 import axios from "axios";
-import filterPaginationData from "../common/filter-pagination-data"
+import { filterPaginationData } from "../common/filter-pagination-data";
 import UserCard from "../components/usercard.component";
+
 const Searchpage = () => {
     let { query } = useParams();
     const [blogs, setBlogs] = useState(null);

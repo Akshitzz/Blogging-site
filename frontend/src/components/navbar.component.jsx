@@ -7,7 +7,7 @@ const Navbar = () =>{
 
 const[SearchBoxvisibility,setSearchBoxvisibility]=useState(false)
 const [userNavPanel,setUserNavPanel]= useState(false);
- const {userAuth, setUserAuth :{access_token ,profile_img} } = useContext(UserContext);
+ const { userAuth: { access_token, profile_img } } = useContext(UserContext);
 
  let navigate= useNavigate()
 
