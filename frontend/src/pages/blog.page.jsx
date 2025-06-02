@@ -5,6 +5,7 @@ import AnimationWrapper from "../common/page-animation";
 import { createContext } from "react";
 import BlogInteraction from "../components/blog-interaction.component";
 import BlogContent from "../components/blog-content.component";
+import CommentsContainer from "../components/comments.component";
 export const blogStructure = {
     title : "",
     des:'',
@@ -25,7 +26,8 @@ const BlogPage = () => {
         const [loading,setLoading] = useState(true);
         const [similarBlogs,setsimilarBlogs] = useState(null)
         const [isLikedByUser,setLikedByUser] = useState(false);
-
+        const [commentswrapper ,setcommentsWrapper] = useState(false);
+        const [totalParentCommentLoaded,setTotalParentCommentLoaded] = useState(0);
 
         let {title,content,banner,author :{personal_info:{fullname,username,personal_img}},publishedAt} = blog;
 
@@ -57,13 +59,16 @@ const BlogPage = () => {
             setBlog(blogStructure)
             setsimilarBlogs(null);
             setLoading(true);
+            setLikedByUser(false);
+            setTotalParentCommentLoaded(0);
         }
         
     return (
             <AnimationWrapper>
                 {
                     loading ? <Loader/> :
-                   <BlogContext.Provider value={{blog,setBlog,isLikedByUser,setLikedByUser}}>
+                   <BlogContext.Provider value={{blog,setBlog,isLikedByUser,setLikedByUser,commentswrapper,setcommentsWrapper,totalParentCommentLoaded,setTotalParentCommentLoaded}}>
+                        <CommentsContainer/>
                      <div className="max-w-[900px] center py-10 max-lg:px-[5vw]">
                         <img src={banner} alt="banner" className="aspect-video" />
 

@@ -5,7 +5,7 @@ import { Link } from "react-router-dom";
 import {toast,Toaster} from "react-hot-toast";
 const BlogInteraction =()=>{
 
-let {blog:{blog_id , activity, activity :{total_likes,total_comments},author:{personal_info:{username:author_username}}},setBlog ,isLikedByUser,setLikedByUser} = useContext(BlogContext)
+let {blog:{blog_id , activity, activity :{total_likes,total_comments},author:{personal_info:{username:author_username}}},setBlog ,isLikedByUser,setLikedByUser,commentswrapper,setcommentsWrapper} = useContext(BlogContext)
 
 let {userAuth:{username,access_token}} =useContext(UserContext)
     const handleLike = () => {
@@ -33,12 +33,14 @@ let {userAuth:{username,access_token}} =useContext(UserContext)
                     className="w-10 h-10 rounded-full flex items-center justify-center bg-grey/10">
                             <i className="fi fi-rr-heart"></i>
                     </button>
-                <p>{total_likes}</p>
+                <p className="text-xl text-dark-grey">{total_likes}</p>
                 </div>
 
 
                 <div className="flex gap-3 items-center">
-                    <button className="w-10 h-10 rounded-full flex items-center justify-center bg-grey/10">
+                    <button
+                    onClick={()=>setcommentsWrapper(preVal =>!preVal)}
+                    className="w-10 h-10 rounded-full flex items-center justify-center bg-grey/10">
                             <i className="fi fi-rr-comment-dots"></i>
                     </button>
                 <p>{total_comments}</p>
