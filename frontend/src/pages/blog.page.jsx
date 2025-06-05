@@ -33,7 +33,9 @@ const BlogPage = () => {
 
         const fetchBlog = ()=>{
             axios.post(import.meta.env.VITE_SERVER_URL+"/get-blog",{blog_id})
-            .then(({data:{blog}})=>{
+            .then(async({data:{blog}})=>{
+
+                blog.comments = await fetchComments({blog_id, setParentCommentCountFun:setTotalParentCommentLoaded});
 
                 axios.post(import.meta.env.VITE_SERVER_URL + "search-blogs" , {tag:tags[0],limit:6,eliminate_blog:blog_id})
                 .then(({data})=>{
@@ -95,7 +97,7 @@ const BlogPage = () => {
                             {
                                 content[0].blocks.map((blocks,i)=>{
                                     return <div key={i} className="my-4 md:my-8">
-                                            <BlogContent block={block}/>
+                                            <BlogContent block={blocks}/>
                                     </div>
                                 })
                             }

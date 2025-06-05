@@ -31,7 +31,7 @@ const [userNavPanel,setUserNavPanel]= useState(false);
  }
  return (
   <>
-    <nav className="navbar">
+    <nav className="navbar z-50">
 
 <Link>
  <img src={logo} alt=" leaf logo" className="flex-none w-10" />
