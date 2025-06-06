@@ -10,6 +10,7 @@ const [passwordVisible,setPaswordVisible] = useState(false);
       placeholder={placeholder}
       defaultValue={value}
       id={id}
+      disable={disable}
       className="input-box"
        />
        <i className={" fi " + icon +" input-icon "}></i>
