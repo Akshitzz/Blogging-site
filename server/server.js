@@ -12,7 +12,6 @@ import aws from "aws-sdk"
 // schema below 
 import Blog from './Schema/Blog.js';
 import Comment from './Schema/Comment.js';
-import User from './Schema/User.js';
 import Notfication from './Schema/Notification.js';
 
 
@@ -532,7 +531,7 @@ if(Blog.draft && !draft){
 
 server.post("/add-comment",verifyJWT,(req,res)=>{
   let user_id =req.user;
-  let {_id,comment,replying_to,blog_author} =req.body;
+  let {_id,comment,blog_author,replying_to,notification_id} =req.body;
   if(!comment.length){
     return res.status(403).json({error:"Write something to comment"})
   }
@@ -575,11 +574,22 @@ server.post("/add-comment",verifyJWT,(req,res)=>{
       notificationObj.replied_on_comment =replying_to;
 
       await Comment.findOneAndUpdate({_id:replying_to},{$push:{children:commentFile._id}}).then(replyingToCommentDoc=>{notificationObj.notification_for=replyingToCommentDoc.commented_by})
+
+      if(notification_id){
+        Notfication.findOneAndUpdate(
+          {
+            _id: notification_id
+          },
+          {
+            reply :commentFile._id
+          }
+        ).then(notfication=>console.log('Notfication Updated'))
+      }
     }
 
 
 
-    new Notification(notificationObj).save().then(notfication=>console.log("notfication created"))
+    new Notification(notificationObj).save().then(notification=>console.log("notfication created"))
 
 
     return res.status(200).json({
@@ -652,7 +662,7 @@ const deleteComments= (_id)=>{
 
     Notfication.findOneAndDelete({comment:_id}).then(notfication=>console.log('comment notfication deleted'))
 
-    Notfication.findOneAndDelete({reply:_id}).then(notfication=>console.log('reply notfication deleted'))
+    Notfication.findOneAndUpdate({reply:_id},{$unset:{reply:1}}).then(notfication=>console.log('reply notfication deleted'))
 
     Blog.findOneAndUpdate({_id:comment.blog_id},{$pull :{comments:_id},$inc:{"activity.total_comments":-1},"activity.total_parent_comments":comment.parent ?0:-1})
     .then(blog=>{
@@ -686,6 +696,90 @@ server.post("/delete-comment",verifyJWT,(req,res)=>{
       return res.status(500).json({error:"You cannot delete this comment"})
     }
   })
+})
+
+
+server.get("/get-notfication",verifyJWT,(req,res)=>{
+  let user_id = req.user;
+
+  Notification.exists({notification_for:user_id,seen:false,user:{$ne:user_id}})
+  .then(result=>{
+    if(result){
+      return res.status(200).json({new_notification_available:true})
+
+    }else{
+      return res.status(200).json({new_notification_available:false})
+    }
+  }).catch(err=>{
+    return res.status(500).json({error :err.message})
+  })
+})
+
+
+server.post("/notfication",verifyJWT,(req,res)=>{
+  let user_id =req.id;
+
+  let {page,filter,deletedDocCount} =req.body;
+
+  let maxLimit=10;
+
+  let findQuery={notification_for:user_id,user:{$ne:user_id}}
+
+  let skipDocs = (page-1) *maxLimit;
+
+  if(filter !== 'all'){
+    findQuery.type =filter;
+  }
+
+  if(deletedDocCount){
+    skipDocs -= deletedDocCount;
+  }
+
+  Notfication.find(findQuery)
+  .skip(skipDocs)
+  .limit(maxLimit)
+  .populate("blogs","title blog_id")
+  .populate("user","personal_info.fullname personal_info.username personal_info.profile_img")
+  .populate("comment" ,"comment")
+  .populate("replied_on_comment","comment")
+  .populate("reply","comment")
+  .then(notfication=>{
+    Notfication.updateMany(findQuery,{seen:true})
+    .skip(skipDocs)
+  .limit(maxLimit)
+    .then(()=>console.log('notfications seen'))
+
+    return res.status(200).json({notfication})
+  }).catch(err=>{
+    console.log(err.message);
+    return res.status(500).json({error :err.message})
+    
+  })
+
+
+
+
+})
+
+server.post("/all-notifications-count",verifyJWT,(req,res)=>{
+  let user_id = req.user;
+  let {filter} = req.body;
+
+  let findQuery = {notification_for:user_id,user:{$ne:user_id}}
+
+    if(filter !== 'all'){
+      findQuery.type =filter;
+    }
+
+Notfication.countDocuments(findQuery)
+.then(count=>{
+  return res.status(200).json({totalDocs:count})
+})
+.catch(err=>{
+  return res.status(500).json({error :err.message})
+})
+
+
 })
 
 

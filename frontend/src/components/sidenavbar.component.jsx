@@ -2,7 +2,7 @@ import { useContext, useEffect, useRef, useState } from "react";
 import { Navigate, Outlet } from "react-router-dom";
 import { UserContext } from "../App";
 const SideNav= ()=>{
-    let {userAuth:{access_token}} = useContext(UserContext)
+    let {userAuth:{access_token,new_notification_available}} = useContext(UserContext)
     let page = location.pathname.split("/")[2];
 
     let [pageState,setpageState] = useState(page.replace('-',' '));
@@ -64,7 +64,15 @@ const SideNav= ()=>{
                         </NavLink>
 
                         <NavLink to="/dashboard/notification" className="sidebar-link" onClick={(e)=>{setpageState(e.target.innerText)}}>
+                           <div className="relative">
                             <i className="fi fi-rr-bell"></i>
+                             {
+
+                                new_notification_available ?
+                                <span className="bg-red w-2 h-2 rounded-full absolute z-10 top-0 right-0"></span>:""
+
+                            }
+                           </div>
                             Notfication
                         </NavLink>
 
