@@ -1,5 +1,3 @@
-import { List } from "@editorjs/list";
-import { Quote } from "@editorjs/quote";
 
 const Img = ({url,caption}) =>{
     return (
@@ -35,7 +33,7 @@ const List = ({style,item})=>{
     )
 }
 
-const BlogContent = ({blog})=>{
+const BlogContent = ({block})=>{
     let {type,data} = block;
     if(type == "paragraph"){
         return <p dangerouslySetInnerHTML={{__html : data.text}}></p>
@@ -55,7 +53,9 @@ const BlogContent = ({blog})=>{
 if(type == "list"){
     return <List style={data.style} items= {data.items}/>
 }
-
+else{
+    <h1> this is a block</h1>
+}
 
     return (
             <h1>blogcontent</h1>

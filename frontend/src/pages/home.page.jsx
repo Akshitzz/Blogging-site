@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import AnimationWrapper from "../common/page-animation";
 import axios from "axios";
 import BLogPostCard from "../components/blog-post.component";
@@ -8,24 +8,13 @@ import MinimalBLogPost from "../components/nobanner-blog-post.component";
 import { activeTabRef } from "../components/inpage-navigation.component";
 import NoDataMessage from "../components/nodata.component";
 import LoadMoreButton from "../components/load-more.component";
+import { filterPaginationData } from "../common/filter-pagination-data";
+
 const HomePage = () => {
     
     let [blogs, setBlogs] = useState(null);
-
-    blogs =[{},{},{}]
-
-    blogs = {
-        results :[{},{},{}],
-        page:2,
-        totalDocs:10,
-    }
-
-
-
     let [trendingBlogs, setTrendingBlogs] = useState(null);
     let [pageState,setpageState] = useState("home");
-
-
 
     let categories= ["programming", "hollywood", "film making", "social media", "cooking","tech","finanaces","travel"]
        
@@ -62,8 +51,7 @@ const HomePage = () => {
                         data_to_send :{tag:pageState}
                     })
 
-
-                setBlogs(data.blogs)
+                setBlogs(formatedData);
             })
             .catch(err =>{
                 console.log(err);

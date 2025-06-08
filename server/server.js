@@ -6,17 +6,13 @@ import { nanoid } from 'nanoid';
 import User from "./Schema/User.js";
 import jwt from 'jsonwebtoken';
 import cors from 'cors';
-import admin, { auth } from "firebase-admin";
+import admin from "firebase-admin";
 import { createRequire } from 'module';
 import aws from "aws-sdk"
 // schema below 
 import Blog from './Schema/Blog.js';
 import Comment from './Schema/Comment.js';
 import Notfication from './Schema/Notification.js';
-
-
-
-
 
 const require = createRequire(import.meta.url);
 const serviceAccount = require("./safevoice2-firebase-adminsdk-8id5v-ddce5f5da9.json");
@@ -29,16 +25,35 @@ import { getAuth } from "firebase-admin/auth";
 import Notification from './Schema/Notification.js';
 import { error } from 'console';
 
-
-
 const server = express();
 
 let emailRegex = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
 let passwordRegex = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{6,20}$/;
 let PORT = 3000;
 
+// CORS Configuration
+const corsOptions = {
+    origin: '*',
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Origin', 'Accept', 'X-Requested-With'],
+    credentials: true,
+    preflightContinue: false,
+    optionsSuccessStatus: 204
+};
+
+server.use(cors(corsOptions));
 server.use(express.json());
-server.use(cors());
+
+// Handle preflight requests
+server.options('*', cors(corsOptions));
+
+// Additional headers for CORS
+server.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+    next();
+});
 
 mongoose.connect(process.env.CONNECTION_STRING, {
   autoIndex: true
@@ -50,7 +65,6 @@ const s3 = new aws.S3({
   secretAccessKey: process.env.AWS_SECRET_KEY,
   signatureVersion: 'v4'
 });
-
 
 const generateUploadURL = async () => {
   try {
@@ -106,7 +120,6 @@ const generateUsername = async (email) => {
   }
   return username;
 };
-
 
 // upload image url root
 server.get('/get-upload-url', async (req, res) => {
@@ -241,8 +254,6 @@ server.post("/all-latest-blogs-count",(req,res)=>{
   .catch(err=>{
     return res.status(500).json({error:err.message})
   })
-
-
 })
 
 server.post("/change-password",verifyJWT,(req,res)=>{
@@ -280,12 +291,9 @@ server.post("/change-password",verifyJWT,(req,res)=>{
   console.log(err)
   res.status(500).json({error:"User not found"})
 })
-
 })
 
-
 server.get('/latest-blogs',(req,res)=>{
-
     let {page} =5;
     let maxLimit =5;
 
@@ -317,8 +325,6 @@ server.get('/trending-blogs',(req,res)=>{
   })
 })
 
-
-
 server.post("/search-blogs",(req,res)=>{
   let {tag ,page,query,author,limit,eliminate_blog}= req.body;
  let findQuery = {tag:tag, draft :false}
@@ -329,7 +335,6 @@ server.post("/search-blogs",(req,res)=>{
   } else if(author) {
     findQuery = {author,draft :false}
   }
-
 
   let maxLimit =limit ?limit:2 ;
 
@@ -345,7 +350,6 @@ server.post("/search-blogs",(req,res)=>{
   .catch(err=>{
     return res.status(500).json({error:err.message})
   })
-
 })
 server.post("/search-blogs-count",(req,res)=>{
   let {tag ,author,query} = req.body;
@@ -381,8 +385,6 @@ server.post("/search-users",(req,res)=>{
   })
 })
 
-
-
 server.post("/get-profile",(req,res)=>{
   let {username} = req.body;
 
@@ -394,7 +396,6 @@ server.post("/get-profile",(req,res)=>{
   .catch(err=>{
     return res.status(500).json({errpr :err.message})
   })
-
 })
 
 server.post("/updated-profile-img",verifyJWT,(req,res)=>{

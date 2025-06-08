@@ -71,3 +71,5 @@ export const CommentField = ({action,index =undefined,replyingTo=undefined,setRe
         </>
     )
 }
+
+export default CommentField;

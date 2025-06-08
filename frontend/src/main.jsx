@@ -3,11 +3,17 @@ import ReactDOM from 'react-dom/client'
 import App from './App.jsx'
 import './index.css'
 import { BrowserRouter } from 'react-router-dom'
+import axios from 'axios'
+
+// Configure axios defaults
+axios.defaults.headers.common['Accept'] = 'application/json';
+axios.defaults.headers.post['Content-Type'] = 'application/json';
+axios.defaults.withCredentials = false;
 
 ReactDOM.createRoot(document.getElementById('root')).render(
-
-   <BrowserRouter>
-   <App />
-   </BrowserRouter>
- 
+  <React.StrictMode>
+    <BrowserRouter>
+      <App />
+    </BrowserRouter>
+  </React.StrictMode>,
 )

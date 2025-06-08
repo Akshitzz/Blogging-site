@@ -1,8 +1,7 @@
-
 import { getDay } from "../common/date";
 import { UserContext } from "../App";
 import { useContext, useState } from "react";
-import { CommentField } from "./comment-field.component";
+import CommentField from "./comment-field.component";
 import { BlogContext } from "../pages/blog.page";
 import axios from "axios";
 const CommentCard= ({index,leftVal,commentData})=>{
@@ -51,7 +50,7 @@ const CommentCard= ({index,leftVal,commentData})=>{
             if(commentData.childrenLevel == 0 && isDelete){
                 setTotalParentCommentLoaded(preVal => preVal-1)
             }
-            setBlog({...blog, comments:{results:commentArr},activity:{...activity,total_parent_comments:total_parent_comments-{commentData.childrenLevel == 0 && isDelete ?1:0}}})
+            setBlog({...blog, comments:{results:commentArr}, activity:{...activity, total_parent_comments: total_parent_comments - (commentData.childrenLevel == 0 && isDelete ? 1 : 0)}})
     }
 
 

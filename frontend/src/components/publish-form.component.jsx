@@ -5,7 +5,7 @@ import { EditorContext } from "../pages/editor.pages";
 import Tag from "./tags.component";
 import axios from "axios";
 import { UserContext } from "../App";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useParams } from "react-router-dom";
 const PublishForm = ()=>{
     let taglimit= 10

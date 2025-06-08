@@ -9,7 +9,8 @@ const Navbar = () =>{
 
 const[SearchBoxvisibility,setSearchBoxvisibility]=useState(false)
 const [userNavPanel,setUserNavPanel]= useState(false);
- const { userAuth: { access_token, profile_img,new_notification_available } ,setUserAuth} = useContext(UserContext);
+ const { userAuth = {} } = useContext(UserContext);
+ const { access_token, profile_img } = userAuth;
 
  let navigate= useNavigate()
 
@@ -56,7 +57,6 @@ const [userNavPanel,setUserNavPanel]= useState(false);
 <Link>
  <img src={logo} alt=" leaf logo" className="flex-none w-10" />
 </Link>
-<p>{new_notification_available}</p>
 
 <div className={"absolute bg-white w-full left-0 top-full mt-0.5 border-b border-grey py-4 px-[5vw] md:border-0 md:block md:relative md:inset-0 md:p-0 md:w-auto md:show " + (  SearchBoxvisibility? " show " : " hide ")}>
 <input type="text"
@@ -82,12 +82,6 @@ onKeyDown={handleSearch}
       <Link to="/dashboard/notification">
       <button className="w-12 h-12 rounded-full bg-grey releative hover:bg-black/10 ">
       <i className="fi fi-rr-bell text-2xl display:block mt-1"></i>
-      {
-
-        new_notification_available ? <span className="bg-red w-4 h-3 rounded-full absolute z-10 top-2 right-2"></span> :""
-
-
-      }
       </button>
       </Link>
 
