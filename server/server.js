@@ -6,7 +6,7 @@ import { nanoid } from 'nanoid';
 import User from "./Schema/User.js";
 import jwt from 'jsonwebtoken';
 import cors from 'cors';
-import admin from "firebase-admin";
+import admin, { auth } from "firebase-admin";
 import { createRequire } from 'module';
 import aws from "aws-sdk"
 // schema below 
@@ -26,7 +26,9 @@ admin.initializeApp({
 });
 
 import { getAuth } from "firebase-admin/auth";
-import { error, log } from 'console';
+import Notification from './Schema/Notification.js';
+import { error } from 'console';
+
 
 
 const server = express();
@@ -781,6 +783,81 @@ Notfication.countDocuments(findQuery)
 
 
 })
+
+server.post("/user-written-blogs",verifyJWT,(req,res)=>{
+  let user_id = req.user;
+
+  let {page,draft,query,deleteDocCount} = req.body;
+
+  let maxLimit =5;
+  let skipDocs = (page -1) * maxLimit;
+  if(deleteDocCount) {
+    skipDocs -= deleteDocCount
+  }
+
+Blog.find({author :user_id,draft,title: new RegExp(query,'i')})
+.skip(skipDocs)
+.limit(maxLimit)
+.sort({publishedAt :-1})
+.select("title banner  publishedAt blog_id des draft -_id")
+.then(blogs=>{
+  return res.status(200).json({blogs})
+})
+.catch(err=>{
+  return res.status(500).json({error :err.message})
+})
+})
+
+
+server.post("/user-written-blogs-count",verifyJWT,(req,res)=>{
+
+  let user_id = req.user;
+  let {page,deletedDocCount,draft,query} =req.body;
+
+
+  let max_limit =5;
+  let skipDocs= (page-1) *max_limit;
+  if(deletedDocCount){
+    skipDocs-= deletedDocCount
+  }
+
+  Blog.countDocuments({author :user_id,draft,title:new RegExp(query,'i')})
+  .then(count=>{
+    return res.status(200).json({totalDocs:count``})
+  })
+  .catch(err=>{
+    console.log(err)
+    return res.status(500).json({error:err.message})
+  })
+
+
+
+}
+)
+
+server.post("/delete-blog",verifyJWT,(req,res)=>{
+
+    let user_id = req.body;
+    let {blog_id} = req.body;
+
+    Blog.findOneAndDelete({blog_id})
+    .then(blog=>{
+      Notification.deleteMany({blog :blog._id}).then(data=>{console.log('notfications deleted')});
+
+    Comment.deleteMany({blog_id:blog._id}).then(data=>console.log('comments deleted'))
+
+    User.findOneAndUpdate({_id :user_id},{$pull:{blog:blog._id}, $inc:{"account_info.total_posts":-1}}).then(user=> console.log('Blog deleted'))
+
+    return res.status(200).json({status: 'done'})
+
+
+    })
+    .catch(err=>{
+      return res.status(500).json({error:err.message})
+    })
+
+})
+
 
 
 server.listen(PORT, () => {

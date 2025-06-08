@@ -85,7 +85,7 @@ let navigate = useNavigate();
                     toast.dismiss(loadingToast);
                     toast.success("Published");
                     setTimeout(()=>{
-                        navigate("/")
+                        navigate("/dashboard/blogs")
                     },500);
                 }
             )
