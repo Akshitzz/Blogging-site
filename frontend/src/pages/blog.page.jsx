@@ -6,125 +6,165 @@ import { createContext } from "react";
 import BlogInteraction from "../components/blog-interaction.component";
 import BlogContent from "../components/blog-content.component";
 import CommentsContainer from "../components/comments.component";
-export const blogStructure = {
-    title : "",
-    des:'',
-    content:[],
-    tags:[],
-    activity:{personal_info:{ }},
-    banner : '',
-    publishedAt : '',
+import Loader from "../components/loader.component";
+import { Link } from "react-router-dom";
+import { getDay } from "../common/date";
+import { fetchComments } from "../components/comments.component";
+import BlogPostCard from "../components/blog-post.component";
 
+export const blogStructure = {
+    title: "",
+    des: '',
+    content: [],
+    tags: [],
+    author: {
+        personal_info: {}
+    },
+    activity: {
+        total_likes: 0,
+        total_comments: 0,
+        total_parent_comments: 0,
+        total_reads: 0
+    },
+    comments: {
+        results: []
+    },
+    banner: '',
+    publishedAt: ''
 }
 
-    export const BlogContext = createContext({ });
-
+export const BlogContext = createContext({});
 
 const BlogPage = () => {
-        const { blog_id } = useParams();
-        const [blog,setBlog] = useState(blogStructure);
-        const [loading,setLoading] = useState(true);
-        const [similarBlogs,setsimilarBlogs] = useState(null)
-        const [isLikedByUser,setLikedByUser] = useState(false);
-        const [commentswrapper ,setcommentsWrapper] = useState(false);
-        const [totalParentCommentLoaded,setTotalParentCommentLoaded] = useState(0);
+    const { blog_id } = useParams();
+    const [blog, setBlog] = useState(blogStructure);
+    const [loading, setLoading] = useState(true);
+    const [similarBlogs, setSimilarBlogs] = useState([]);
+    const [isLikedByUser, setLikedByUser] = useState(false);
+    const [commentsWrapper, setCommentsWrapper] = useState(false);
+    const [totalParentCommentLoaded, setTotalParentCommentLoaded] = useState(0);
 
-        let {title,content,banner,author :{personal_info:{fullname,username,personal_img}},publishedAt} = blog;
+    const fetchBlog = () => {
+        axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/get-blog", { blog_id })
+            .then(async ({ data: { blog } }) => {
+                try {
+                    let commentsData = await fetchComments({ 
+                        blog_id, 
+                        setParentCommentCountFun: setTotalParentCommentLoaded 
+                    });
+                    
+                    blog.comments = commentsData;
 
-        const fetchBlog = ()=>{
-            axios.post(import.meta.env.VITE_SERVER_URL+"/get-blog",{blog_id})
-            .then(async({data:{blog}})=>{
-
-                blog.comments = await fetchComments({blog_id, setParentCommentCountFun:setTotalParentCommentLoaded});
-
-                axios.post(import.meta.env.VITE_SERVER_URL + "search-blogs" , {tag:tags[0],limit:6,eliminate_blog:blog_id})
-                .then(({data})=>{
-                        setsimilarBlogs(data.blogs);
-
-                })
-               setBlog(blog);
-            setLoading(false);
+                    if(blog.tags && blog.tags.length) {
+                        try {
+                            const { data } = await axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/search-blogs", {
+                                tag: blog.tags[0],
+                                limit: 6,
+                                eliminate_blog: blog_id
+                            });
+                            setSimilarBlogs(data.blogs || []);
+                        } catch (err) {
+                            console.error("Error fetching similar blogs:", err);
+                            setSimilarBlogs([]);
+                        }
+                    }
+                    
+                    setBlog(blog);
+                } catch (err) {
+                    console.error("Error in blog processing:", err);
+                }
+                setLoading(false);
             })
-            .catch(err=>{
-                console.log(err);
-            })
-        }
+            .catch(err => {
+                console.error("Error fetching blog:", err);
+                setLoading(false);
+            });
+    }
 
-        useEffect(()=>{
+    useEffect(() => {
+        resetStates();
+        fetchBlog();
+    }, [blog_id]);
 
-            resetStates();
-            fetchBlog();
-
-        },[])
-
-        const resetStates = ()=>{
-            setBlog(blogStructure)
-            setsimilarBlogs(null);
-            setLoading(true);
-            setLikedByUser(false);
-            setTotalParentCommentLoaded(0);
-        }
+    const resetStates = () => {
+        setBlog(blogStructure);
+        setSimilarBlogs([]);
+        setLoading(true);
+        setLikedByUser(false);
+        setTotalParentCommentLoaded(0);
+    }
         
     return (
-            <AnimationWrapper>
-                {
-                    loading ? <Loader/> :
-                   <BlogContext.Provider value={{blog,setBlog,isLikedByUser,setLikedByUser,commentswrapper,setcommentsWrapper,totalParentCommentLoaded,setTotalParentCommentLoaded}}>
-                        <CommentsContainer/>
-                     <div className="max-w-[900px] center py-10 max-lg:px-[5vw]">
-                        <img src={banner} alt="banner" className="aspect-video" />
+        <AnimationWrapper>
+            <BlogContext.Provider value={{
+                blog, 
+                setBlog,
+                isLikedByUser,
+                setLikedByUser,
+                commentsWrapper,
+                setCommentsWrapper,
+                totalParentCommentLoaded,
+                setTotalParentCommentLoaded
+            }}>
+                {loading ? (
+                    <Loader />
+                ) : (
+                    <>
+                        <CommentsContainer />
+                        <div className="max-w-[900px] center py-10 max-lg:px-[5vw]">
+                            <img src={blog.banner} alt="banner" className="aspect-video" />
 
-                        <div className="mt-12">
-                            <h2>{title}</h2>
-                            <div>
-                                <div>
-                                    <img src={profile_img} alt="profle image " />
-                                    <p className="capitalize">
-                                        {fullname}
-                                        <br />
-                                        <Link to={`/user/${author_username}`}>
-                                        </Link>
+                            <div className="mt-12">
+                                <h2>{blog.title}</h2>
+                                <div className="flex items-center gap-4 mt-8">
+                                    <div className="flex items-center gap-2">
+                                        <img src={blog.author.personal_info.profile_img} 
+                                             alt="profile" 
+                                             className="w-12 h-12 rounded-full" />
+                                        <p className="capitalize">
+                                            {blog.author.personal_info.fullname}
+                                            <br />
+                                            <Link to={`/user/${blog.author.personal_info.username}`} 
+                                                  className="text-dark-grey">
+                                                @{blog.author.personal_info.username}
+                                            </Link>
+                                        </p>
+                                    </div>
+                                    <p className="text-dark-grey opacity-75 ml-auto">
+                                        Published on {getDay(blog.publishedAt)}
                                     </p>
                                 </div>
-                                <p className="text-dark-grey opacity-75 max-sm:mt-6 max-sm:ml-12 max-sm:pl-5 ">Published on {getDay(publishedAt)}</p>
-                                
                             </div>
-                        </div>
 
-                    <BlogInteraction/>
+                            <BlogInteraction />
 
-                        <div className="my-12 font-gelasio blog-page-content">
-                            {
-                                content[0].blocks.map((blocks,i)=>{
-                                    return <div key={i} className="my-4 md:my-8">
-                                            <BlogContent block={blocks}/>
+                            <div className="my-12 font-gelasio blog-page-content">
+                                {blog.content[0]?.blocks.map((block, i) => (
+                                    <div key={i} className="my-4 md:my-8">
+                                        <BlogContent block={block} />
                                     </div>
-                                })
-                            }
-                        </div>
-                    <BlogInteraction/>
-                    {
-                        similarBlogs !== null && similarBlogs.length ?
-                        <>
-                        <h1 className="text-2xl mt-14 mb-10 font-medium ">Similar Blogs </h1>
-                        {
-                            similarBlogs.map((blog,i)=>{
-                                let {author:{personal_info}} =blog;
-                                return <AnimationWrapper>
-                                    <BlogPostCard content={blog} author={personal_info}>
+                                ))}
+                            </div>
 
-                                    </BlogPostCard>
-                                </AnimationWrapper>
-                            })
-                        }
-                        </> : " "
-                    }
-                    </div>
-                   </BlogContext.Provider>
-                }
-               
-            </AnimationWrapper>
-    )
+                            {similarBlogs && similarBlogs.length > 0 && (
+                                <>
+                                    <h1 className="text-2xl mt-14 mb-10 font-medium">Similar Blogs</h1>
+                                    {similarBlogs.map((blog, i) => {
+                                        let { author: { personal_info } } = blog;
+                                        return (
+                                            <AnimationWrapper key={i}>
+                                                <BlogPostCard content={blog} author={personal_info} />
+                                            </AnimationWrapper>
+                                        );
+                                    })}
+                                </>
+                            )}
+                        </div>
+                    </>
+                )}
+            </BlogContext.Provider>
+        </AnimationWrapper>
+    );
 }
 
 export default BlogPage;

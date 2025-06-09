@@ -15,20 +15,35 @@ const BlogEditor = ()=>{
 
 let navigate = useNavigate()
 let blogBannerRef= useRef()
-let {blog,blog:{ title,banner,content,tags,des,author} ,setBlog,textEditor,setTextEditor,setEditorState}= useContext(EditorContext)
+let { 
+    blog = {},
+    blog: { title = '', banner = '', content = [], tags = [], des = '', author = { personal_info: {} } } = {},
+    setBlog,
+    textEditor,
+    setTextEditor,
+    setEditorState,
+    error
+} = useContext(EditorContext)
 let {blog_id} = useParams();
 let {userAuth :{access_token}} = useContext(UserContext)
-// useeffect
+
 useEffect(()=>{
-    if(!textEditor.isReady){
+    if (error) {
+        toast.error(error);
+    }
+}, [error]);
+
+useEffect(()=>{
+    if (!textEditor || !textEditor.isReady) {
         setTextEditor(new EditorJS({
             holder: "textEditor",
-            data: Array.isArray(content) ? content[0] : content ,
+            data: Array.isArray(content) ? content[0] : content,
             tools: tools,
             placeholder: "Let's write an awesome story"
-        }))
+        }));
     }
-},[])
+}, []);
+
     const handleBannerUpload = async (e) => {
         let img = e.target.files[0];
         if(img){
@@ -75,75 +90,76 @@ useEffect(()=>{
         img.src=defaultBanner;
     }
 
-    const handlePublishEvent=()=>{
-            if(!banner.length){
-                return toast.error("Upload a Blog banner to publish it")
-            } 
+    const handlePublishEvent = () => {
+        if(!banner.length){
+            return toast.error("Upload a Blog banner to publish it")
+        } 
 
-            if(!title.length){
-                return toast.error("Write blog title to publish it") 
-            }
-            
-            if(textEditor.isReady){
-                textEditor.save().then(data=>{
-                    if(data.blocks.length){
-                    setBlog({ ...blog,content:data});
+        if(!title.length){
+            return toast.error("Write blog title to publish it") 
+        }
+        
+        if(textEditor && textEditor.isReady){
+            textEditor.save().then(data => {
+                if(data.blocks.length){
+                    setBlog({ ...blog, content: data});
                     setEditorState("publish")
-                    }else{
-                        return toast.error("Write someThing in  your blog to publish it")
-                    }
-                }).catch((err)=>{
-                    console.log(err);
-                })
-            }
-
+                } else {
+                    return toast.error("Write something in your blog to publish it")
+                }
+            }).catch((err) => {
+                console.log(err);
+                toast.error("Error saving blog content");
+            })
+        } else {
+            toast.error("Editor is not ready yet. Please try again.");
+        }
     }
 
-    const handlesaveDraft = (e)=>{
+    const handlesaveDraft = (e) => {
         if(e.target.className.includes("disable")){
-            return ;
-         }
-                    if(!title.length){
-                        return toast.error("Write your own title before saving it as a draft")
-                    }
+            return;
+        }
+        if(!title.length){
+            return toast.error("Write your own title before saving it as a draft")
+        }
           
-            let loadingToast = toast.loading("Saving draft... ");
-            e.target.classList.add('disable');
+        let loadingToast = toast.loading("Saving draft... ");
+        e.target.classList.add('disable');
 
-            if(textEditor.isReady){
-                textEditor.save().then(content=>{
+        if(textEditor && textEditor.isReady){
+            textEditor.save().then(content => {
+                let blogObj = {
+                    title, banner, des, content, tags, draft: true
+                }
 
-
-                    let blogObj = {
-                        title,banner,des,content,tags , draft :true
+                axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/create-blog", 
+                    {...blogObj, id: blog_id},
+                    {
+                        headers: {
+                            'Authorization': `Bearer ${access_token}`
+                        }
                     }
-                   
-
-                    axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/create-blog",{...blogObj,id:blog_id},{
-                        headers :{
-                            'Authorization' : `Bearer ${access_token}`
-        
-                        }
-                    })
-                    .then(
-                        ()=>{
-                            e.target.classList.remove('disable');
-                            toast.dismiss(loadingToast);
-                            toast.success("Saved");
-                            setTimeout(()=>{
-                                navigate("/dashboard/blogs?tab=draft")
-                            },500);
-                        }
-                    )
-                    .catch(({ response })=>{
-                        e.target.classList.remove('disable');
-                        toast.dismiss(loadingToast);
-                        return toast.error(response.data.error)
-                    })
+                )
+                .then(() => {
+                    e.target.classList.remove('disable');
+                    toast.dismiss(loadingToast);
+                    toast.success("Saved");
+                    setTimeout(() => {
+                        navigate("/dashboard/blogs?tab=draft")
+                    }, 500);
                 })
-
-            }
-                    
+                .catch(({ response }) => {
+                    e.target.classList.remove('disable');
+                    toast.dismiss(loadingToast);
+                    return toast.error(response.data.error)
+                })
+            })
+        } else {
+            e.target.classList.remove('disable');
+            toast.dismiss(loadingToast);
+            toast.error("Editor is not ready yet. Please try again.");
+        }
     }
     return (
         <>
@@ -177,7 +193,7 @@ useEffect(()=>{
                             <label htmlFor="uploadBanner">
                                 <img
                                     ref={blogBannerRef}
-                                    src={banner}
+                                    src={banner || defaultBanner}
                                     className="z-20 w-full h-full object-cover"
                                     onError={handleError}
                                     alt="Blog banner"

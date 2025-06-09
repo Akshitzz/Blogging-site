@@ -10,6 +10,7 @@ import BLogPostCard from "../components/blog-post.component";
 import NoDataMessage from "../components/nodata.component";
 import LoadMoreButton from "../components/load-more.component";
 import PageNotFound from "./404.page";
+import axios from "axios";
 
 export const profileDataStructure = {
     personal_info :{
@@ -29,16 +30,24 @@ export const profileDataStructure = {
 const ProfilePage = () => {
     let {id:profileId} = useParams();
     let [profile,setProfile] = useState(profileDataStructure);
-    let [loading,setloading] =useState(true);
+    let [loading,setLoading] =useState(true);
     let [blogs,setBlogs] = useState(null);
-    let [profileLoaded,setProfileLoaded] = useState();
+    let [profileLoaded,setProfileLoaded] = useState("");
     
     let { personal_info:{ fullname,username:profile_username,profile_img,bio},account_info:{total_posts,total_reads}, social_links,joinedat} = profile;
     let { userAuth :{username} } = useContext(UserContext);
     
+    const resetStates = () => {
+        setProfile(profileDataStructure);
+        setLoading(true);
+        setBlogs(null);
+    }
+
     const getBlogs = ({page=1,user_id}) =>{
-        user_id = user_id == undefined ? blogs.users._id : user_id;
+        user_id = user_id == undefined ? blogs?.user?._id : user_id;
     
+        if (!user_id) return;
+
         axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/search-blogs",{
             author:user_id,
             page
@@ -56,6 +65,9 @@ const ProfilePage = () => {
     
                 setBlogs(formatedData);
         })
+        .catch(err => {
+            console.error("Error fetching blogs:", err);
+        });
     }
     const fetchUserProfile = ()=>{
         axios.post(import.meta.env.VITE_SERVER_DOMAIN + "/get-profile",{
@@ -64,33 +76,23 @@ const ProfilePage = () => {
             .then(({data:user})=>{
                 if(user !==null){
                     setProfile(user);
+                    getBlogs({user_id:user._id});
                 }
-
-                getBlogs({user_id:user._id})
-                setProfile(user);
-                setProfileLoaded(profileId)
-                setloading(false);
+                setProfileLoaded(profileId);
+                setLoading(false);
             })
             .catch(err =>{
-                console.log(err``)
+                console.error("Error fetching profile:", err);
+                setLoading(false);
             })
     }
 
     useEffect(()=>{
         if(profileId !== profileLoaded){
-            setBlogs(null);
-        }
-        if(blogs == null){
             resetStates();
             fetchUserProfile();
         }
-
-        resetStates();
-        setBlogs(null);
-        fetchUserProfile();
-        setProfileLoaded("");
-
-    },[profileId,blogs])
+    },[profileId])
 
     return (
         <AnimationWrapper>
@@ -116,7 +118,7 @@ const ProfilePage = () => {
                             
 
                         </div>
-                             <AboutUser  className="max-md:hidden" bio={bio} social_links={social_links} joinedAt= {joinedat}/>
+                        <AboutUser className="max-md:hidden" bio={bio} social_links={social_links} joinedAt={joinedat} />
 
                     </div>
                              <div className="max-md:mt-12 w-full ">

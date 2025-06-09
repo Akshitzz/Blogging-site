@@ -136,16 +136,18 @@ const EditProfile = () => {
                     <h1 className="max-md:hidden">Edit Profile</h1>
                     <div className="flex flex-col lg:flex-row items-start py-10 gap-8 lg:gap-10">
                         <div className="max-lg:center mb-5">
-                            <label htmlFor="uploadImg" id="profileImglabel">
-                                <div className="w-full h-full absolute top-0 left-0 flex items-center justify-center text-white bg-black/80 opacity-0 hover:opacity-100 cursor-pointer">
-                                    Upload Image
-                                </div>
-                                <img src={profile_img} alt="user profile photo" ref={profileImgFile} />
-                            </label>
+                            <div className="relative w-[200px] h-[200px] rounded-full border-2 border-grey overflow-hidden">
+                                <img src={profile_img} alt="user profile photo" ref={profileImgFile} className="w-full h-full object-cover" />
+                                <label htmlFor="uploadImg" className="absolute bottom-0 left-0 w-full py-2 text-center bg-black/80 text-white cursor-pointer hover:bg-black/90">
+                                    Change Photo
+                                </label>
+                            </div>
                             <input type="file" id="uploadImg" accept=".jpeg,.png,.jpg" hidden onChange={handleImagePreview} />
-                            <button className="btn-light mt-5 max-lg:center lg:w-full px-10" onClick={handleImageUpload}>
-                                Upload
-                            </button>
+                            {updatedProfileImg && (
+                                <button className="btn-light mt-5 max-lg:center lg:w-full px-10" onClick={handleImageUpload}>
+                                    Upload
+                                </button>
+                            )}
 
                             <div className="w-full">
                                 <div className="grid grid-cols-1 md:grid-cols-2 md:gap-5">
